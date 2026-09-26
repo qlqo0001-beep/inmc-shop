@@ -1,4 +1,4 @@
-# inmcshop — 이 플러그인의 규칙
+# inmc-shop — 이 플러그인의 규칙
 
 워크스페이스 공통 지침(`../CLAUDE.md`)에 더해 여기서만 통하는 것들. 설계는 `README.md`.
 

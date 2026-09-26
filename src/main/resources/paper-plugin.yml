@@ -1,4 +1,4 @@
-name: inmcshop
+name: inmc-shop
 version: '${version}'
 main: com.inmc.shop.ShopPlugin
 api-version: '${apiVersion}'   # build.gradle.kts 의 inmc { paper } 에서 유도됨

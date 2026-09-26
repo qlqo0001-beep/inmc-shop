@@ -130,6 +130,8 @@ data class Product(
     val slot: Int = -1,
     val rotating: Boolean = false,
     val weight: Double = 1.0,
+    /** 상점에서 숨김 — 상점 화면·판매(`/판매` 등)·회전 뽑기에 나오지 않는다. 정의·가격·재고는 그대로. */
+    val hidden: Boolean = false,
 ) {
     val key: String get() = "$shopId/$id"
 
@@ -161,6 +163,7 @@ data class Product(
             section.set("rotating", true)
             section.set("weight", weight)
         }
+        if (hidden) section.set("hidden", true)
     }
 
     companion object {
@@ -183,6 +186,7 @@ data class Product(
             slot = section.getInt("slot", -1),
             rotating = section.getBoolean("rotating", false),
             weight = section.getDouble("weight", 1.0).coerceAtLeast(0.0),
+            hidden = section.getBoolean("hidden", false),
         )
     }
 }
@@ -249,6 +253,18 @@ data class VirtualShop(
     fun product(id: String): Product? = products[id]
 
     fun fixedAt(page: Int, slot: Int): Product? = products.values.firstOrNull { !it.rotating && it.page == page && it.slot == slot }
+
+    /**
+     * 상품 칸 정리 — 보이는 고정 상품을 [positions](페이지, 칸)의 앞에서부터 채우고, 숨긴 상품은 그 뒤에. 각자의 원래 순서(페이지 → 칸)는
+     * 지킨다. 칸이 모자라면 null.
+     */
+    fun organized(positions: List<Pair<Int, Int>>): VirtualShop? {
+        val fixed = products.values.filter { !it.rotating }
+            .sortedWith(compareBy<Product>({ it.hidden }, { it.slot < 0 }, { it.page }, { it.slot }))
+        if (fixed.size > positions.size) return null
+        val moved = fixed.withIndex().associate { (i, p) -> p.id to p.copy(page = positions[i].first, slot = positions[i].second) }
+        return copy(products = products.mapValues { (id, p) -> moved[id] ?: p })
+    }
 
     fun toYaml(): YamlConfiguration {
         val y = YamlConfiguration()

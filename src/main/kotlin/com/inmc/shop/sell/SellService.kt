@@ -37,7 +37,7 @@ class SellService(private val shop: Shop) {
         var bestScore = -1.0
         for (product in shop.shops.products()) {
             if (onlyShop != null && product.shopId != onlyShop) continue
-            if (product.item == null || product.item.material != stack.type || !product.tradable(TradeType.SELL)) continue
+            if (product.hidden || product.item == null || product.item.material != stack.type || !product.tradable(TradeType.SELL)) continue
             if (!shop.trades.matches(product, stack)) continue
             val vshop = shop.shops.get(product.shopId) ?: continue
             if (!vshop.selling || !shop.trades.canOpen(player, vshop)) continue

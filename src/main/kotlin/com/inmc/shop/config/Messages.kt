@@ -48,10 +48,10 @@ class Messages(values: Map<String, String>) : MessageCatalog<Ph>(values, DEFAULT
             "shop-selling-disabled" to "<red>이 상점에서는 팔 수 없습니다.</red>",
             "product-broken" to "<red>이 상품은 설정이 잘못되어 거래할 수 없습니다. 관리자에게 알려 주세요.</red>",
             "product-not-ready" to "<yellow>아직 가격이 정해지지 않은 상품입니다.</yellow>",
+            "product-hidden" to "<red>지금은 상점에 없는 상품입니다.</red>",
             "requirements-not-met" to "<red>이 상품을 사고팔 조건이 맞지 않습니다.</red>",
             "buy-disabled" to "<red>이 상품은 살 수 없습니다.</red>",
             "sell-disabled" to "<red>이 상품은 팔 수 없습니다.</red>",
-            "cannot-buy-now" to "<red>지금은 살 수 없습니다(돈·재고·한도·가방 공간).</red>",
             "limit-reached" to "<red>한도에 닿았습니다. (한도 {max})</red>",
             "out-of-stock" to "<red>재고가 없습니다.</red>",
             "stock-full" to "<red>상점이 더 사지 않습니다(재고가 가득).</red>",
@@ -66,6 +66,8 @@ class Messages(values: Map<String, String>) : MessageCatalog<Ph>(values, DEFAULT
             // --- 관리 --------------------------------------------------------------
             "admin-picked" to "<gray>골랐습니다. 빈 칸을 누르면 그 자리에 상품이 됩니다.</gray>",
             "admin-pick-first" to "<yellow>먼저 아래 가방의 물건을 클릭해 고르세요.</yellow>",
+            "admin-organized" to "<green>상품 칸을 정리했습니다. 숨긴 상품 {개수}개는 맨 뒤로 옮겼습니다.</green>",
+            "admin-organize-no-room" to "<red>상품 칸이 모자라 정리하지 못했습니다. 페이지를 늘리세요.</red>",
             "layout-saved" to "<green>레이아웃을 저장했습니다.</green>",
             "defaults-created" to "<green>기본 상점 {개수}개를 만들었습니다.</green>",
 

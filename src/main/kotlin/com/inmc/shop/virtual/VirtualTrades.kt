@@ -71,6 +71,8 @@ class VirtualTrades(private val shop: Shop) {
         if (!shop.config.virtual.enabled) return fail("module-disabled")
         if (!shop.guard(player, quiet)) return null
         val vshop = shop.shops.get(product.shopId) ?: return fail("product-broken")
+        // 열린 화면이 숨기기 전의 상품을 들고 있을 수 있다 — 지금 정의를 본다.
+        if (vshop.product(product.id)?.hidden == true) return fail("product-hidden")
         if (!canOpen(player, vshop)) return fail("shop-no-permission")
         if (type == TradeType.BUY && !vshop.buying) return fail("shop-buying-disabled")
         if (type == TradeType.SELL && !vshop.selling) return fail("shop-selling-disabled")

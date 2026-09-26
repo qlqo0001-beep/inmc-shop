@@ -66,10 +66,7 @@ class TradeMenu(
             "<gray>" + (if (target.type == TradeType.BUY) "지불" else "받음") + ": <white>" + (if (total == null || currency == null) "-" else currency.format(total)) + "</white></gray>",
             "", "<green>→ 클릭해서 $verb</green>",
         ))) {
-            if (max <= 0) {
-                shop.messages.send(viewer, if (target.type == TradeType.BUY) "cannot-buy-now" else "not-enough-items")
-                return@set
-            }
+            // 최대가 0 이어도 거래에 넘긴다 — 거래의 확인이 막힌 까닭(돈·재고·한도·가방 공간 …)을 하나씩 알려 준다.
             target.execute(viewer, units) { ok ->
                 if (!viewer.isOnline) return@execute
                 if (ok && shop.config.closeAfterPurchase) viewer.closeInventory()

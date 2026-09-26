@@ -25,6 +25,10 @@ class ShopPlugin : JavaPlugin() {
     private var papi: PapiHook? = null
 
     override fun onEnable() {
+        if (!moveLegacyFolder()) {
+            server.pluginManager.disablePlugin(this)
+            return
+        }
         shop = Shop(this)
         for (name in RESOURCES) shop.io.copyDefault(name, shop.io.file(name))
         shop.config = ShopConfig.from(shop.io.load(shop.io.file("config.yml")))
@@ -67,7 +71,7 @@ class ShopPlugin : JavaPlugin() {
         ticker = Ticker(shop)
         shop.markReady()
         ticker.start()
-        logger.info("inmcshop 활성화 - 서버 상점 ${shop.shops.all().size}개 · 상자 상점 ${shop.chests.all().size}개 · 경매 ${shop.auction.active().size}건" +
+        logger.info("inmc-shop 활성화 - 서버 상점 ${shop.shops.all().size}개 · 상자 상점 ${shop.chests.all().size}개 · 경매 ${shop.auction.active().size}건" +
             if (shop.db.network != null) " · 공용 DB 연결" else "")
     }
 
@@ -119,6 +123,22 @@ class ShopPlugin : JavaPlugin() {
         }
     }
 
+    /**
+     * 플러그인 이름이 `inmcshop` → `inmc-shop` 으로 바뀌어 데이터 폴더도 바뀐다. 새 폴더가 비어 있고 옛 폴더가 있으면 통째로 옮긴다
+     * (안 옮기면 빈 폴더에 기본 상점·새 DB 가 생긴다). 못 옮기면 false — 켜지 않는다.
+     */
+    private fun moveLegacyFolder(): Boolean {
+        val legacy = File(dataFolder.parentFile, LEGACY_FOLDER)
+        if (!legacy.isDirectory || dataFolder.list()?.isNotEmpty() == true) return true
+        dataFolder.delete()
+        if (legacy.renameTo(dataFolder)) {
+            logger.info("옛 데이터 폴더 plugins/$LEGACY_FOLDER 을(를) plugins/${dataFolder.name} 으로 옮겼습니다.")
+            return true
+        }
+        logger.severe("옛 데이터 폴더 plugins/$LEGACY_FOLDER 을(를) plugins/${dataFolder.name} 으로 옮기지 못했습니다 - 직접 옮기고 다시 켜세요.")
+        return false
+    }
+
     private fun closeMenus() {
         for (player in server.onlinePlayers) {
             val holder = player.openInventory.topInventory.holder
@@ -128,5 +148,6 @@ class ShopPlugin : JavaPlugin() {
 
     private companion object {
         val RESOURCES = listOf("config.yml", "messages.yml")
+        const val LEGACY_FOLDER = "inmcshop"
     }
 }

@@ -393,7 +393,7 @@ class Verifier(private val shop: Shop) {
         shop.io.asyncRun { file.parentFile.mkdirs(); file.writeText(text, Charsets.UTF_8) }
         if (p.isOnline) shop.messages.send(p, "verify-finished", Ph.of()
             .count(s.results.count { it.status == Status.PASS }).value(s.results.count { it.status == Status.FAIL }.toString())
-            .max(s.results.count { it.status == Status.SKIP }.toLong()).reason("plugins/inmcshop/verify/" + file.name))
+            .max(s.results.count { it.status == Status.SKIP }.toLong()).reason("plugins/inmc-shop/verify/" + file.name))
     }
 
     companion object {

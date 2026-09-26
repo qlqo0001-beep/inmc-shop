@@ -183,7 +183,7 @@ class RulesTest {
         val product = Product(
             "p1", "s", unit = 16, name = "<red>이름", lore = listOf("한 줄"), commands = listOf("say {player}"), currency = "cash",
             pricing = Pricing.Fixed(5, 2), stock = StockOptions(true, 50, 10, 20, 300), limits = LimitOptions(true, 3, 4, -1),
-            requirements = Requirements(listOf("vip"), listOf("ban"), listOf("a.b"), listOf("c.d")), page = 2, slot = 13, rotating = true, weight = 2.5,
+            requirements = Requirements(listOf("vip"), listOf("ban"), listOf("a.b"), listOf("c.d")), page = 2, slot = 13, rotating = true, weight = 2.5, hidden = true,
         )
         val shop = VirtualShop(
             "s", "<green>상점", listOf("설명"), permissionRequired = true, buying = false, pages = 3, menuSlot = 11, layout = "wide",
@@ -192,6 +192,21 @@ class RulesTest {
         )
         val back = YamlConfiguration().apply { loadFromString(shop.toYaml().saveToString()) }
         assertEquals(shop, VirtualShop.load("s", back))
+    }
+
+    @Test
+    fun `상품 칸 정리 — 보이는 상품이 앞, 숨긴 상품이 뒤, 각자의 순서는 그대로`() {
+        fun p(id: String, page: Int, slot: Int, hidden: Boolean = false, rotating: Boolean = false) = Product(id, "s", page = page, slot = slot, hidden = hidden, rotating = rotating)
+        val shop = VirtualShop("s", products = listOf(
+            p("a", 1, 5, hidden = true), p("b", 1, 9), p("c", 2, 0), p("d", 1, 2, hidden = true), p("e", 1, 30), p("r", 1, -1, rotating = true),
+        ).associateBy { it.id })
+        val positions = listOf(1 to 0, 1 to 1, 1 to 3, 2 to 0, 2 to 1, 2 to 2)
+        val organized = shop.organized(positions)!!
+        fun at(id: String) = organized.products.getValue(id).let { it.page to it.slot }
+        assertEquals(listOf(1 to 0, 1 to 1, 1 to 3), listOf(at("b"), at("e"), at("c")), "보이는 상품 — 원래 순서대로 앞에서부터")
+        assertEquals(listOf(2 to 0, 2 to 1), listOf(at("d"), at("a")), "숨긴 상품 — 그 뒤에")
+        assertEquals(1 to -1, at("r"), "회전 상품은 건드리지 않는다")
+        assertNull(shop.organized(positions.take(4)), "칸이 모자라면 정리하지 않는다")
     }
 
     @Test

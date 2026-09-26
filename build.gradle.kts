@@ -7,7 +7,7 @@ version = "1.0.0"
 
 inmc {
     paper = "26.2"
-    pluginName = "inmcshop"
+    pluginName = "inmc-shop"
 }
 
 dependencies {

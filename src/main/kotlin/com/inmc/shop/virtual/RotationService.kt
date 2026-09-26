@@ -28,17 +28,17 @@ class RotationService(private val shop: Shop) {
     fun state(shopId: String, rotationId: String): RotationState? = states[keyOf(shopId, rotationId)]
 
     /**
-     * 이 페이지의 칸 → 상품. 고정 상품 + 회전이 뽑은 상품(회전 칸을 페이지·칸 순으로 채운다).
+     * 이 페이지의 칸 → 상품. 고정 상품 + 회전이 뽑은 상품(회전 칸을 페이지·칸 순으로 채운다). 숨긴 상품은 빠진다.
      */
     fun productsAt(vshop: VirtualShop, page: Int): Map<Int, Product> {
         val out = HashMap<Int, Product>()
-        for (product in vshop.products.values) if (!product.rotating && product.page == page && product.slot >= 0) out[product.slot] = product
+        for (product in vshop.products.values) if (!product.rotating && !product.hidden && product.page == page && product.slot >= 0) out[product.slot] = product
         for (rotation in vshop.rotations.values) {
             val state = states[keyOf(vshop.id, rotation.id)] ?: continue
             val ordered = rotation.slots.toSortedMap().flatMap { (p, set) -> set.sorted().map { p to it } }
             for ((index, pos) in ordered.withIndex()) {
                 if (pos.first != page) continue
-                val product = state.items.getOrNull(index)?.let { vshop.products[it] } ?: continue
+                val product = state.items.getOrNull(index)?.let { vshop.products[it] }?.takeIf { !it.hidden } ?: continue
                 out[pos.second] = product
             }
         }
@@ -67,7 +67,7 @@ class RotationService(private val shop: Shop) {
         val key = keyOf(vshop.id, rotation.id)
         if (!inFlight.add(key)) return
         val pool = rotation.products.ifEmpty { vshop.products.values.filter { it.rotating }.map { it.id } }
-            .mapNotNull { vshop.products[it] }.filter { it.rotating }
+            .mapNotNull { vshop.products[it] }.filter { it.rotating && !it.hidden }
         val picks = Rotations.pick(pool.map { it.id to it.weight }, rotation.slotCount) { ThreadLocalRandom.current().nextDouble() }
         val next = rotation.schedule.next(now, ZoneId.systemDefault()) ?: (now + 86_400_000L)
         val items = picks.joinToString(",")

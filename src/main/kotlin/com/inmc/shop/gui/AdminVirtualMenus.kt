@@ -121,7 +121,7 @@ class ShopEditMenu(shop: Shop, viewer: Player, private val id: String) : Menu(sh
             val options = listOf("" to "모듈 기본") + Currencies.all().map { it.id to Text.plain(it.name) }
             ask(DialogForm("<yellow>상점 화폐</yellow>").choice("c", "화폐", options, s.currency)) { v -> mutate { it.copy(currency = v.choice("c").orEmpty()) } }
         }
-        set(28, Icon.of(Material.CHEST, "<green>상품 (고정 칸)</green>", "<gray>${s.products.values.count { !it.rotating }}개</gray>", "", "<yellow>▶ 페이지별로 칸에 놓고 편집</yellow>")) { ProductGridMenu(shop, viewer, id, 0).show() }
+        set(28, Icon.of(Material.CHEST, "<green>상품 (고정 칸)</green>", "<gray>${s.products.values.count { !it.rotating }}개 (숨김 ${s.products.values.count { !it.rotating && it.hidden }})</gray>", "", "<yellow>▶ 페이지별로 칸에 놓고 편집</yellow>")) { ProductGridMenu(shop, viewer, id, 0).show() }
         set(29, Icon.of(Material.ENDER_CHEST, "<light_purple>회전 상품</light_purple>", "<gray>${s.products.values.count { it.rotating }}개 — 회전이 뽑는 후보</gray>", "", "<yellow>▶ 클릭</yellow>")) { RotatingProductsMenu(shop, viewer, id).show() }
         set(30, Icon.of(Material.CLOCK, "<light_purple>회전</light_purple>", "<gray>${s.rotations.size}개</gray>", "", "<yellow>▶ 클릭</yellow>")) { RotationListMenu(shop, viewer, id).show() }
         set(32, Icon.of(Material.SPYGLASS, "<white>손님 화면 보기</white>")) { ShopMenu(shop, viewer, id, 0).show() }
@@ -173,6 +173,7 @@ class ProductGridMenu(shop: Shop, viewer: Player, private val shopId: String, pr
             set(slot, Icon.annotate(Products.baseIcon(shop, product), lore = listOf(
                 "<gray>가격: <white>${product.pricing.kind.label}</white> · 구매 ${shop.prices.price(product, TradeType.BUY) ?: "꺼짐"} · 판매 ${shop.prices.price(product, TradeType.SELL) ?: "꺼짐"}</gray>",
                 "<gray>저장: <white>${product.shown?.let(ItemStorage::label) ?: "-"}</white></gray>",
+                if (product.hidden) "<red>숨김 — 손님에게 안 보입니다</red>" else "",
                 if (moving == product.id) "<green>옮기는 중 — 빈 칸을 누르세요</green>" else "",
                 "<yellow>클릭</yellow> <gray>편집</gray> · <yellow>Shift+클릭</yellow> <gray>옮기기</gray>",
             ))) { event ->
@@ -185,7 +186,25 @@ class ProductGridMenu(shop: Shop, viewer: Player, private val shopId: String, pr
         layout.buttons[LayoutButton.NEXT]?.let { slot -> if (page < vshop.pages - 1) set(slot, Icon.nextPage()) { ProductGridMenu(shop, viewer, shopId, page + 1).show() } }
         layout.buttons[LayoutButton.BACK]?.let { slot -> set(slot, Icon.back()) { ShopEditMenu(shop, viewer, shopId).show() } }
         layout.buttons[LayoutButton.CLOSE]?.let { slot -> set(slot, Icon.close()) { viewer.closeInventory() } }
+        // 정리하기 — 페이지 이동 말고 남는 버튼 자리(없으면 장식 자리)에.
+        val spare = layout.buttons.filterKeys { it !in NAVIGATION }.values.minOrNull() ?: layout.decorations.keys.minOrNull()
+        if (spare != null) set(spare, Icon.of(Material.HOPPER, "<yellow>정리하기</yellow>", "<gray>보이는 상품을 앞 칸부터 채우고</gray>", "<gray>숨긴 상품은 맨 뒤로 옮깁니다.</gray>", "<gray>회전 칸은 비워 둡니다.</gray>", "", "<yellow>▶ 클릭</yellow>")) { organize() }
+        else viewer.sendActionBar(Text.render("<gray>이 레이아웃에 남는 버튼·장식 칸이 없어 정리하기 버튼을 놓지 못했습니다</gray>"))
         if (LayoutButton.BACK !in layout.buttons) viewer.sendActionBar(Text.render("<gray>이 레이아웃에 돌아가기 버튼이 없습니다 — /상점 관리 로 돌아가세요</gray>"))
+    }
+
+    /** 모든 페이지의 상품 칸(회전 칸 빼고)을 앞에서부터 — 보이는 상품, 그 뒤에 숨긴 상품. */
+    private fun organize() {
+        val vshop = shop.shops.get(shopId) ?: return
+        val positions = (1..vshop.pages).flatMap { p ->
+            val rotating = vshop.rotations.values.flatMap { it.slots[p].orEmpty() }.toSet()
+            ShopMenu.layoutOf(shop, shopId, p - 1).productSlots().filter { it !in rotating }.map { p to it }
+        }
+        val organized = vshop.organized(positions) ?: return shop.messages.send(viewer, "admin-organize-no-room")
+        shop.shops.put(organized)
+        moving = null
+        shop.messages.send(viewer, "admin-organized", Ph.of().count(vshop.products.values.count { !it.rotating && it.hidden }))
+        refresh()
     }
 
     private fun place(slot: Int) {
@@ -204,6 +223,10 @@ class ProductGridMenu(shop: Shop, viewer: Player, private val shopId: String, pr
         shop.shops.putProduct(product)
         picked = null
         ProductEditMenu(shop, viewer, shopId, product.id) { ProductGridMenu(shop, viewer, shopId, page).show() }.show()
+    }
+
+    private companion object {
+        val NAVIGATION = setOf(LayoutButton.PREV, LayoutButton.NEXT, LayoutButton.BACK, LayoutButton.CLOSE)
     }
 }
 
@@ -232,7 +255,7 @@ class RotatingProductsMenu(shop: Shop, viewer: Player, private val shopId: Strin
         clear()
         val vshop = shop.shops.get(shopId) ?: return back()
         for ((i, product) in vshop.products.values.filter { it.rotating }.take(45).withIndex()) {
-            set(i, Icon.annotate(Products.baseIcon(shop, product), lore = listOf("<gray>가중치: <white>${product.weight}</white></gray>", "<gray>저장: <white>${product.shown?.let(ItemStorage::label) ?: "-"}</white></gray>", "", "<yellow>▶ 클릭해서 편집</yellow>"))) {
+            set(i, Icon.annotate(Products.baseIcon(shop, product), lore = listOf("<gray>가중치: <white>${product.weight}</white></gray>", "<gray>저장: <white>${product.shown?.let(ItemStorage::label) ?: "-"}</white></gray>", if (product.hidden) "<red>숨김 — 뽑히지 않습니다</red>" else "", "<yellow>▶ 클릭해서 편집</yellow>"))) {
                 ProductEditMenu(shop, viewer, shopId, product.id) { show() }.show()
             }
         }
@@ -344,6 +367,7 @@ class ProductEditMenu(shop: Shop, viewer: Player, private val shopId: String, pr
             if (event.isRightClick) return@set ask(DialogForm("<yellow>가중치</yellow>").decimal("w", "가중치(클수록 잘 뽑힘)", p.weight, 0.0)) { v -> mutate { it.copy(weight = v.decimal("w") ?: 1.0) } }
             mutate { it.copy(rotating = !it.rotating) }; refresh()
         }
+        set(25, toggleIcon("상점에서 숨기기", p.hidden, "<gray>켜면 상점 화면·판매·회전에 나오지 않습니다.</gray>", "<gray>가격·재고·한도는 그대로 둡니다.</gray>")) { mutate { it.copy(hidden = !it.hidden) }; refresh() }
         set(31, Icon.of(Material.BARRIER, "<red>시세·재고 초기화</red>", "<gray>가격 상태를 처음으로(시장 배수 1).</gray>")) {
             ConfirmMenu(shop, "<red>시세를 초기화할까요?</red>", onConfirm = { shop.prices.reset(p); show() }, onCancel = { show() }).open(viewer)
         }
