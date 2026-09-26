@@ -1,0 +1,32 @@
+# 경매장 분류. /상점 관리 → 경매 분류 에서 고칩니다.
+# match: 재질 이름 패턴(*_SWORD) 또는 #BLOCK(블록) · #EDIBLE(먹을 것) · #ALL(전부)
+blocks:
+  name: <green>블록</green>
+  icon: GRASS_BLOCK
+  match: ['#BLOCK']
+  order: 1
+weapons:
+  name: <red>무기·도구</red>
+  icon: DIAMOND_SWORD
+  match: ['*_SWORD', '*_AXE', '*_PICKAXE', '*_SHOVEL', '*_HOE', BOW, CROSSBOW, TRIDENT, MACE, FISHING_ROD, SHEARS, FLINT_AND_STEEL, BRUSH, SPYGLASS]
+  order: 2
+armor:
+  name: <aqua>방어구</aqua>
+  icon: DIAMOND_CHESTPLATE
+  match: ['*_HELMET', '*_CHESTPLATE', '*_LEGGINGS', '*_BOOTS', SHIELD, ELYTRA, TURTLE_HELMET, '*_HORSE_ARMOR', WOLF_ARMOR]
+  order: 3
+food:
+  name: <gold>음식</gold>
+  icon: COOKED_BEEF
+  match: ['#EDIBLE']
+  order: 4
+materials:
+  name: <white>재료·광물</white>
+  icon: DIAMOND
+  match: ['*_INGOT', '*_NUGGET', 'RAW_*', DIAMOND, EMERALD, LAPIS_LAZULI, REDSTONE, QUARTZ, COAL, CHARCOAL, AMETHYST_SHARD, NETHERITE_SCRAP, STRING, LEATHER, FEATHER, BONE, GUNPOWDER, SLIME_BALL, ENDER_PEARL, BLAZE_ROD]
+  order: 5
+magic:
+  name: <light_purple>포션·마법</light_purple>
+  icon: POTION
+  match: [POTION, SPLASH_POTION, LINGERING_POTION, ENCHANTED_BOOK, TIPPED_ARROW, EXPERIENCE_BOTTLE, TOTEM_OF_UNDYING, ENCHANTED_GOLDEN_APPLE]
+  order: 6

@@ -1,0 +1,207 @@
+# INMC 상점 설정. /상점 관리 → 설정 에서 GUI 로 고치는 것을 권장합니다 — 화면에서 고치면 이 파일을 통째로 다시 씁니다.
+# network.url 을 적으면(jdbc:mysql://…) 여러 서버가 재고·시세·경매·은행을 같이 씁니다. 바꾸면 재시작하세요.
+# worlds: 상점이 동작하는 월드(화이트리스트). 게임모드는 서바이벌만(관리자는 inmcshop.bypass.gamemode).
+
+server-name: main
+network:
+  url: ''
+  user: ''
+  password: ''
+  sync-seconds: 10
+worlds:
+- world
+- world_nether
+- world_the_end
+currency-needs-permission: false
+buy-with-full-inventory: false
+close-after-purchase: false
+logs:
+  file: true
+  console: false
+
+# --- 서버 상점 ------------------------------------------------------------------------------
+virtual:
+  enabled: true
+  currency:
+    default: ''          # 비우면 화폐 플러그인의 기본 화폐
+    allowed:
+    - '*'
+  clicks:
+    BOTH:
+      LEFT: OPEN_BUY
+      RIGHT: OPEN_SELL
+      SHIFT_LEFT: BUY_ONE
+      SHIFT_RIGHT: SELL_ONE
+      CONTROL_DROP: SELL_ALL
+    BUYABLE:
+      LEFT: OPEN_BUY
+      RIGHT: BUY_ONE
+      NUMBER_KEY: BUY_ONE
+    SELLABLE:
+      LEFT: OPEN_SELL
+      RIGHT: SELL_ONE
+      NUMBER_KEY: SELL_ONE
+      CONTROL_DROP: SELL_ALL
+  main-menu:
+    enabled: true
+    hide-no-permission: true
+  shortcuts: true
+  sell:
+    gui: true
+    all: true
+    hand: true
+    hand-all: true
+    containers: true
+  # 판매 배수. RANK = LuckPerms 그룹(group.<이름>), PERMISSION = 접두사+이름 권한. 여러 개가 맞으면 가장 큰 값.
+  sell-multiplier:
+    mode: RANK
+    permission-prefix: inmcshop.sellmultiplier.
+    default: 1.0
+    values:
+      vip: 1.5
+      gold: 2.0
+  # 시장 가격 전역 계수 — /상점 관리 → 시장 가격 계수
+  market:
+    period-minutes: 30
+    grace-seconds: 30
+    reference-volume: 64.0
+    user-cap: 256
+    reference-users: 5
+    short-alpha: 0.5
+    long-alpha: 0.05
+    short-weight: 0.6
+    sensitivity: 0.1
+    max-step: 0.05
+    reversion: 0.02
+    activity-alpha: 0.3
+    low-activity: 16.0
+    high-activity: 256.0
+    dormancy-step: 0.002
+    dormancy-max: 0.01
+    dormancy-decay: 0.5
+    base-noise: 0.01
+    dormancy-noise: 0.03
+    pressure-noise: 0.02
+    min-multiplier: 0.1
+    max-multiplier: 10.0
+
+# --- 상자 상점 ------------------------------------------------------------------------------
+chest:
+  enabled: true
+  currency:
+    default: ''
+    allowed:
+    - '*'
+  clicks:
+    BOTH:
+      LEFT: BUY_ONE
+      RIGHT: SELL_ONE
+      SHIFT_LEFT: OPEN_BUY
+      SHIFT_RIGHT: OPEN_SELL
+      CONTROL_DROP: SELL_ALL
+    BUYABLE:
+      LEFT: BUY_ONE
+      RIGHT: OPEN_BUY
+      NUMBER_KEY: BUY_ONE
+    SELLABLE:
+      LEFT: SELL_ONE
+      RIGHT: OPEN_SELL
+      NUMBER_KEY: SELL_ONE
+      CONTROL_DROP: SELL_ALL
+  default-name: 상점
+  max-name-length: 16
+  admin-name: <red>관리자 상점</red>
+  blocks:
+  - CHEST
+  - TRAPPED_CHEST
+  - BARREL
+  - SHULKER_BOX
+  create-cost: 0
+  remove-cost: 0
+  max-shops:
+    mode: RANK
+    permission-prefix: inmcshop.chestshop.shops.
+    default: 10.0
+    values:
+      vip: 20.0
+      admin: -1.0
+  max-products:
+    mode: RANK
+    permission-prefix: inmcshop.chestshop.products.
+    default: 5.0
+    values:
+      vip: 9.0
+      admin: -1.0
+  # 상품 하나의 창고 용량(개)
+  capacity:
+    mode: RANK
+    permission-prefix: inmcshop.chestshop.capacity.
+    default: 1728.0
+    values:
+      vip: 3456.0
+      admin: -1.0
+  max-price: 10000000
+  banned:
+    materials:
+    - BARRIER
+    - BEDROCK
+    names: []
+    lores: []
+  check-build: true
+  lands-only: false
+  creation-items: false
+  bank:
+    enabled: true
+    mandatory: false
+  rent:
+    enabled: true
+    max-days: 30
+    max-price:
+      money: 1000000
+  display:
+    hologram: true
+    view-distance: 16
+    item-change-seconds: 5
+  safe-teleport: true
+  notify-owner: true
+
+# --- 경매장 --------------------------------------------------------------------------------
+auction:
+  enabled: true
+  currency:
+    default: ''
+    allowed:
+    - '*'
+  expire-hours: 168
+  # 끝난 기록(돈 받음·돌려받음)만 정리한다. 받지 않은 물건·돈은 지우지 않는다.
+  purge-days: 7
+  tax:
+    listing-percent: 10.0
+    purchase-percent: 0.0
+  max-listings:
+    mode: RANK
+    permission-prefix: inmcshop.auction.listings.
+    default: 10.0
+    values:
+      vip: 15.0
+      admin: -1.0
+  price-bounds:
+    currency:
+      money:
+        min: 1
+        max: 10000000
+    material: {}
+  banned:
+    materials:
+    - BARRIER
+    - BEDROCK
+    names: []
+    lores: []
+    models: {}
+  announce: true
+  auto-claim: false
+  notify-on-join: true
+  warnings:
+    to-ban: 3
+    ban-days: 7
+    expire-days: 30
