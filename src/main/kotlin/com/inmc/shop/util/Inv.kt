@@ -5,19 +5,22 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
 /**
- * 가방 계산. **가방 칸(0~35)만** 본다 — 갑옷·왼손은 사고팔기에 끼지 않는다(입은 것을 팔아 버리면 안 된다).
+ * 가방 계산. **가방 칸(0~35)** 을 본다 — 갑옷·왼손은 사고팔기에 끼지 않는다(입은 것을 팔아 버리면 안 된다).
+ * [carried] 면 그다음 **배낭**(core `CarriedStorage`)까지 — 배낭 안 물건도 가방처럼 판다(사용자 결정 2026-09-30). 빼는 순서는 가방 먼저.
+ * "전부 판매" 만 배낭을 빼고 부른다 — 배낭에 아껴 둔 물건이 한꺼번에 팔리지 않게.
  */
 object Inv {
 
     private const val STORAGE = 36
 
-    fun count(player: Player, matches: (ItemStack) -> Boolean): Int {
+    fun count(player: Player, carried: Boolean = true, matches: (ItemStack) -> Boolean): Int {
         var total = 0
         val contents = player.inventory.storageContents
         for (i in 0 until minOf(STORAGE, contents.size)) {
             val stack = contents[i] ?: continue
             if (!stack.type.isAir && matches(stack)) total += stack.amount
         }
+        if (carried) total += kr.inmc.core.integration.CarriedStorage.count(player, matches)
         return total
     }
 
@@ -36,8 +39,8 @@ object Inv {
         return amount - left
     }
 
-    /** 맞는 것을 [amount] 개 빼고 **뺀 조각들**을 돌려준다 — 거래가 뒤에서 실패하면 그대로 [restore] 한다. */
-    fun take(player: Player, matches: (ItemStack) -> Boolean, amount: Int): List<ItemStack> {
+    /** 맞는 것을 [amount] 개 빼고 **뺀 조각들**을 돌려준다 — 거래가 뒤에서 실패하면 그대로 [restore] 한다(배낭에서 뺀 것은 가방으로). */
+    fun take(player: Player, matches: (ItemStack) -> Boolean, amount: Int, carried: Boolean = true): List<ItemStack> {
         var left = amount
         val taken = ArrayList<ItemStack>()
         val inventory = player.inventory
@@ -50,6 +53,7 @@ object Inv {
             if (take == stack.amount) inventory.setItem(i, null) else inventory.setItem(i, stack.clone().apply { this.amount = stack.amount - take })
             left -= take
         }
+        if (carried && left > 0) kr.inmc.core.integration.CarriedStorage.take(player, left, taken, matches)
         return taken
     }
 

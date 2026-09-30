@@ -19,9 +19,10 @@ interface ItemSource {
     fun stacks(): List<ItemStack>
 }
 
-class PlayerSource(private val player: Player) : ItemSource {
-    override fun count(matches: (ItemStack) -> Boolean) = Inv.count(player, matches)
-    override fun take(matches: (ItemStack) -> Boolean, amount: Int) = Inv.take(player, matches, amount)
+/** 가방 — [carried] 면 배낭까지(가방 먼저). "전부 판매" 는 배낭을 빼고 쓴다(사용자 결정 2026-09-30). */
+class PlayerSource(private val player: Player, private val carried: Boolean = true) : ItemSource {
+    override fun count(matches: (ItemStack) -> Boolean) = Inv.count(player, carried, matches)
+    override fun take(matches: (ItemStack) -> Boolean, amount: Int) = Inv.take(player, matches, amount, carried)
     override fun restore(pieces: List<ItemStack>) = Inv.restore(player, pieces)
     override fun stacks(): List<ItemStack> = player.inventory.storageContents.take(36).filterNotNull().filter { !it.type.isAir }
 }

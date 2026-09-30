@@ -198,7 +198,7 @@ class Verifier(private val shop: Shop) {
             val have = count(p, Material.STONE)
             val best = shop.sell.best(p, ItemStack(Material.STONE), SHOP_ID)
             val before = money()
-            shop.sell.sellEverything(p, listOf(com.inmc.shop.util.PlayerSource(p)), SHOP_ID) { _ ->
+            shop.sell.sellEverything(p, listOf(com.inmc.shop.util.PlayerSource(p, carried = false)), SHOP_ID) { _ ->
                 val expected = Math.floor(8L * have * shop.trades.sellMultiplier(p)).toLong()
                 when {
                     best?.id != "stone2" -> done(Status.FAIL, "최고가 상품이 ${best?.id}(stone2 여야)")

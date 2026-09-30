@@ -163,7 +163,7 @@ class MainMenu(shop: Shop, viewer: Player) : Menu(shop, viewer, shop.layouts.mai
     private fun buttons(layout: Layout, onlyShop: String?) {
         for ((button, slot) in layout.buttons) when (button) {
             LayoutButton.BALANCE -> set(slot, balanceIcon(shop, viewer))
-            LayoutButton.SELL_ALL -> if (viewer.hasPermission("inmcshop.key.sellall")) set(slot, sellAllIcon()) { shop.sell.sellEverything(viewer, listOf(com.inmc.shop.util.PlayerSource(viewer)), onlyShop) { if (viewer.isOnline) refresh() } }
+            LayoutButton.SELL_ALL -> if (viewer.hasPermission("inmcshop.key.sellall")) set(slot, sellAllIcon()) { shop.sell.sellEverything(viewer, listOf(com.inmc.shop.util.PlayerSource(viewer, carried = false)), onlyShop) { if (viewer.isOnline) refresh() } }
             LayoutButton.CLOSE -> set(slot, Icon.close()) { viewer.closeInventory() }
             else -> Unit
         }
@@ -214,7 +214,7 @@ class ShopMenu(shop: Shop, viewer: Player, private val shopId: String, private v
             LayoutButton.BALANCE -> set(slot, MainMenu.balanceIcon(shop, viewer))
             LayoutButton.SELL_ALL -> if (viewer.hasPermission("inmcshop.key.sellall") && vshop.selling) {
                 set(slot, Icon.of(Material.HOPPER, "<yellow><b>전부 판매</b></yellow>", "<gray>이 상점이 사는 것을 가방에서 전부 팝니다.</gray>", "", "<yellow>▶ 클릭</yellow>")) {
-                    shop.sell.sellEverything(viewer, listOf(com.inmc.shop.util.PlayerSource(viewer)), shopId) { if (viewer.isOnline) refresh() }
+                    shop.sell.sellEverything(viewer, listOf(com.inmc.shop.util.PlayerSource(viewer, carried = false)), shopId) { if (viewer.isOnline) refresh() }
                 }
             }
             LayoutButton.CLOSE -> set(slot, Icon.close()) { viewer.closeInventory() }

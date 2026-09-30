@@ -97,11 +97,11 @@ class SellService(private val shop: Shop) {
         done(summary)
     }
 
-    /** `/전부판매` — 가방(+ 설정이면 셜커 상자 안). */
+    /** `/전부판매` — 가방(+ 설정이면 셜커 상자 안). 배낭은 빼고(사용자 결정 2026-09-30). */
     fun sellAll(player: Player) {
         if (!shop.guard(player)) return
         val sources = ArrayList<ItemSource>()
-        sources += PlayerSource(player)
+        sources += PlayerSource(player, carried = false)
         if (shop.config.virtual.sellContainers) for (slot in ContainerSource.slotsOf(player)) sources += ContainerSource(player, slot)
         sellEverything(player, sources)
     }
