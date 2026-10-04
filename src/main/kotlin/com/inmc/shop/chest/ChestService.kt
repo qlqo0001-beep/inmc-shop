@@ -328,7 +328,7 @@ class ChestService(private val shop: Shop) {
             val label = label(product)
             shop.log.record("chest", "buy", player.uniqueId, player.name, subject(product), label, items, currency.format(total), value.id + "@" + value.key.world + "," + value.key.x + "," + value.key.y + "," + value.key.z)
             shop.messages.send(player, "chest-bought", Ph.of().item(label).amount(items).price(currency.format(total)).shop(value.name))
-            notifyOperator(value, "chest-owner-sold-to", Ph.of().player(player.name).item(label).amount(items).price(currency.format(total)).shop(value.name))
+            notifyOperator(value, "chest-owner-sold-to", Ph.of().player(kr.inmc.core.integration.TitleForgeNames.displayName(player.uniqueId, player.name)).item(label).amount(items).price(currency.format(total)).shop(value.name))
             shop.displays.refresh(value)
             then(true)
         } finally {
@@ -368,7 +368,7 @@ class ChestService(private val shop: Shop) {
                 val label = label(product)
                 shop.log.record("chest", "sell", player.uniqueId, player.name, subject(product), label, items, currency.format(total), value.id)
                 shop.messages.send(player, "chest-sold", Ph.of().item(label).amount(items).price(currency.format(total)).shop(value.name))
-                notifyOperator(value, "chest-owner-bought-from", Ph.of().player(player.name).item(label).amount(items).price(currency.format(total)).shop(value.name))
+                notifyOperator(value, "chest-owner-bought-from", Ph.of().player(kr.inmc.core.integration.TitleForgeNames.displayName(player.uniqueId, player.name)).item(label).amount(items).price(currency.format(total)).shop(value.name))
                 shop.displays.refresh(current)
                 then(true)
             } finally {
@@ -419,7 +419,7 @@ class ChestService(private val shop: Shop) {
         update(value.id) { it.copy(rent = it.rent.copy(renter = player.uniqueId, renterName = player.name, until = until)) }
         capacity(shops[value.id]!!)
         shop.messages.send(player, if (extending) "rent-extended" else "rent-started", Ph.of().shop(value.name).time(kr.inmc.core.util.Durations.formatShort((until - now) / 1000)))
-        Bukkit.getPlayer(value.owner)?.let { shop.messages.send(it, "rent-owner-notice", Ph.of().player(player.name).shop(value.name).price(currency.format(value.rent.price))) }
+        Bukkit.getPlayer(value.owner)?.let { shop.messages.send(it, "rent-owner-notice", Ph.of().player(kr.inmc.core.integration.TitleForgeNames.displayName(player.uniqueId, player.name)).shop(value.name).price(currency.format(value.rent.price))) }
         return true
     }
 
