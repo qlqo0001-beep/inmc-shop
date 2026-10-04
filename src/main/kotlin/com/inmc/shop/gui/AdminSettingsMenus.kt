@@ -58,6 +58,9 @@ class AdminHubMenu(shop: Shop, viewer: Player) : Menu(shop, viewer, 45, "<dark_r
             viewer.closeInventory()
             (shop.plugin as ShopPlugin).reload { shop.messages.send(viewer, "reloaded") }
         }
+        set(36, Icon.of(Material.COMPASS, "<gold>어드민 메뉴로</gold>", "<gray>각 플러그인 설정 허브로 돌아갑니다.</gray>")) {
+            viewer.performCommand("메뉴 어드민")
+        }
         fillEmpty(Icon.FILLER)
         set(44, Icon.close()) { viewer.closeInventory() }
     }
