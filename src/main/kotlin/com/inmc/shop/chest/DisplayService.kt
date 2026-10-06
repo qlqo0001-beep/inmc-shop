@@ -58,8 +58,12 @@ class DisplayService(private val shop: Shop) {
     fun onChunkLoad(chunk: Chunk) {
         for (value in shop.chests.all()) {
             if (value.key.world != chunk.world.name || value.key.x shr 4 != chunk.x || value.key.z shr 4 != chunk.z) continue
-            if (!spawned.containsKey(value.id)) spawn(value)
+            // 무조건 다시 세운다. 맵에 있다고 건너뛰면 — 월드 언로드처럼 청크 사건 없이 엔티티가
+            // 사라진 뒤에는 — 영영 안 돌아온다(테섭 2026-10-04 "멀리 갔다 오면 디스플레이가 없음").
+            // refresh 는 tracked-사라짐을 치우고 로드된 청크에만 세우므로 멱등하다.
+            refresh(value)
         }
+        sweepChunk(chunk)
     }
 
     fun onChunkUnload(chunk: Chunk) {
@@ -70,20 +74,47 @@ class DisplayService(private val shop: Shop) {
         }
     }
 
-    /** 1초마다 — 상품이 여럿인 상점은 [ChestSettings.itemChangeSeconds] 마다 다음 상품. */
+    /** 1초마다 — 상품이 여럿인 상점은 [ChestSettings.itemChangeSeconds] 마다 다음 상품. 고아는 60초마다. */
     fun tick() {
         seconds++
-        if (seconds % settings.itemChangeSeconds != 0L) return
-        for (value in shop.chests.all()) {
-            if (value.products.size < 2 || !spawned.containsKey(value.id)) continue
-            cursor.merge(value.id, 1, Int::plus)
-            refresh(value)
+        if (seconds % settings.itemChangeSeconds == 0L) {
+            for (value in shop.chests.all()) {
+                if (value.products.size < 2 || !spawned.containsKey(value.id)) continue
+                cursor.merge(value.id, 1, Int::plus)
+                refresh(value)
+            }
         }
+        if (seconds % SWEEP_SECONDS == 0L) sweepUnknown()
     }
 
     fun shutdown() {
         for (value in shop.chests.all()) remove(value)
         spawned.clear()
+    }
+
+    /**
+     * 주인 없는 디스플레이를 거둔다 — 지워진 상점의 것이나 겹쳐 세워진 것. 로드된 청크만 본다.
+     * 리로드 뒤 + 60초마다 + 청크 로드 때마다 돈다. 리로드 없이도 저절로 사라진다.
+     */
+    fun sweepUnknown() {
+        if (!Bukkit.isPrimaryThread()) return shop.main { sweepUnknown() }
+        val known = shop.chests.all().map { it.id }.toSet()
+        for (world in Bukkit.getWorlds()) {
+            for (entity in world.getEntitiesByClass(Display::class.java)) {
+                val id = entity.persistentDataContainer.get(tag, PersistentDataType.STRING) ?: continue
+                if (id !in known) entity.remove()
+            }
+        }
+    }
+
+    /** 청크 하나만 본다 — 로드 때 그 자리 고아를 즉시 치운다. */
+    private fun sweepChunk(chunk: Chunk) {
+        val known = shop.chests.all().map { it.id }.toSet()
+        for (entity in chunk.entities) {
+            if (entity !is Display) continue
+            val id = entity.persistentDataContainer.get(tag, PersistentDataType.STRING) ?: continue
+            if (id !in known) entity.remove()
+        }
     }
 
     private fun spawn(value: ChestShop) {
@@ -158,5 +189,8 @@ class DisplayService(private val shop: Shop) {
     companion object {
         /** 고정 — 플러그인 이름이 바뀌어도 남은 엔티티를 알아본다. */
         const val TAG_NAMESPACE = "inmcshop"
+
+        /** 고아 청소 주기(초). Display 엔티티 훑기라 1초마다 돌릴 것은 아니다. */
+        const val SWEEP_SECONDS = 60L
     }
 }

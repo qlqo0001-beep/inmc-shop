@@ -118,6 +118,7 @@ class ShopPlugin : JavaPlugin() {
             closeMenus()
             shop.displays.shutdown()
             shop.displays.spawnAll()
+            shop.displays.sweepUnknown()
             ticker.start()
             then()
         }
