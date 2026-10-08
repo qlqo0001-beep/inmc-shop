@@ -84,39 +84,17 @@ abstract class Menu(
 }
 
 /**
- * 여러 보기 중 하나(또는 여럿)를 고르는 화면.
+ * core [kr.inmc.core.gui.PickMenu] 에 이 플러그인의 로케이터만 붙인 것(2026-10-08 — 본체는 core 로 올렸다).
+ * 보기 아이콘·여럿 고르기·◀ 뒤로의 뜻은 core 의 것과 같다.
  */
 class PickMenu<T>(
     shop: Shop,
     viewer: Player,
     title: String,
-    private val options: List<T>,
-    private val icon: (T) -> ItemStack,
-    private val multi: Boolean = false,
-    private val selected: () -> Set<T> = { emptySet() },
-    override val back: (() -> Unit)?,
-    private val onPick: (T) -> Unit,
-) : Menu(shop, viewer, 54, title) {
-
-    private var page = 0
-
-    override fun draw() {
-        clear()
-        page = Paging.clamp(page, options.size)
-        val chosen = selected()
-        for ((slot, option) in Paging.slice(options, page).withIndex()) {
-            val base = icon(option)
-            val shown = if (!multi) base else Icon.annotate(
-                base.clone().also { if (option in chosen) it.editMeta { meta -> meta.setEnchantmentGlintOverride(true) } },
-                lore = listOf("", if (option in chosen) "<green>▶ 켜짐 - 클릭해서 끄기</green>" else "<gray>▶ 꺼짐 - 클릭해서 켜기</gray>"),
-            )
-            set(slot, shown) {
-                onPick(option)
-                if (multi) refresh()
-            }
-        }
-        fillEmpty(Icon.FILLER)
-        pager(page, options.size) { page = it; refresh() }
-        navigation()
-    }
-}
+    options: List<T>,
+    icon: (T) -> ItemStack,
+    multi: Boolean = false,
+    selected: () -> Set<T> = { emptySet() },
+    back: (() -> Unit)?,
+    onPick: (T) -> Unit,
+) : kr.inmc.core.gui.PickMenu<T>(shop, viewer, title, options, icon, multi, selected, back, onPick)

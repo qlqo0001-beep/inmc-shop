@@ -56,9 +56,24 @@ class PriceService(private val shop: Shop) {
 
     /** 한 단위의 지금 가격. null = 그 방향 거래 불가. */
     fun price(product: Product, type: TradeType): Long? {
-        if (!product.tradable(type)) return null
+        if (!product.tradable(type)) return fallback(product, type)
         return Prices.unitPrice(product.pricing, state(product), type, Bukkit.getOnlinePlayers().size)
     }
+
+    /**
+     * 가격을 정하지 않은 상품(고정가인데 사고팔기 둘 다 꺼짐)의 기본가(사용자 결정 2026-10-08 — 블록 872·작물 36·전리품 51개가 그 상태였다).
+     * 한쪽이라도 정했으면 관리자의 뜻이라 손대지 않는다. 명령어 상품은 없다. 규칙은 `virtual.fallback-price`([com.inmc.shop.price.FallbackPrice]).
+     */
+    fun fallback(product: Product, type: TradeType): Long? {
+        if (product.type != ProductType.ITEM) return null
+        val fixed = product.pricing as? Pricing.Fixed ?: return null
+        if (fixed.buy != null || fixed.sell != null) return null
+        val material = product.item?.material ?: return null
+        return shop.config.virtual.fallback.price(material, type)
+    }
+
+    /** 지금 보이는 가격이 기본가인가(화면 표시용). */
+    fun isFallback(product: Product, type: TradeType): Boolean = !product.tradable(type) && fallback(product, type) != null
 
     /** 지난번 대비 % (추세 표시). 모르면 null. */
     fun trend(product: Product, type: TradeType): Double? {

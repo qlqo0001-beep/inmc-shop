@@ -406,7 +406,7 @@ class AuctionService(private val shop: Shop) {
         /** 검색용 글자 — 이름(평문) + 재질. */
         fun searchText(stack: ItemStack): String {
             val name = stack.itemMeta?.displayName()?.let { Text.plain(it) }.orEmpty()
-            return (name + " " + stack.type.name.lowercase().replace('_', ' ')).trim().lowercase()
+            return (name + " " + stack.type.name.lowercase().replace('_', ' ') + " " + kr.inmc.core.util.VanillaNames.of(stack.type).orEmpty()).trim().lowercase()
         }
     }
 }

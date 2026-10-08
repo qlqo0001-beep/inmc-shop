@@ -234,6 +234,8 @@ data class VirtualSettings(
     val sellContainers: Boolean = true,
     val sellMultiplier: RankValues = RankValues(RankValues.Mode.RANK, "inmcshop.sellmultiplier.", 1.0, mapOf("vip" to 1.5, "gold" to 2.0)),
     val market: MarketParams = MarketParams(),
+    /** 가격을 정하지 않은 상품의 기본가(2026-10-08) — `fallback-price`. */
+    val fallback: com.inmc.shop.price.FallbackPrice = com.inmc.shop.price.FallbackPrice(),
 ) {
     fun save(section: ConfigurationSection) {
         section.set("enabled", enabled)
@@ -249,6 +251,7 @@ data class VirtualSettings(
         section.set("sell.containers", sellContainers)
         sellMultiplier.save(section.createSection("sell-multiplier"))
         market.save(section.createSection("market"))
+        fallback.save(section.createSection("fallback-price"))
     }
 
     companion object {
@@ -269,6 +272,7 @@ data class VirtualSettings(
                 sellContainers = section.getBoolean("sell.containers", true),
                 sellMultiplier = RankValues.load(section.getConfigurationSection("sell-multiplier"), d.sellMultiplier),
                 market = MarketParams.load(section.getConfigurationSection("market")),
+                fallback = com.inmc.shop.price.FallbackPrice.load(section.getConfigurationSection("fallback-price")),
             )
         }
     }

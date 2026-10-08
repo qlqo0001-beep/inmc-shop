@@ -11,6 +11,7 @@ import com.inmc.shop.virtual.Quantity
 import kr.inmc.core.economy.Currency
 import kr.inmc.core.item.ItemRef
 import org.bukkit.Bukkit
+import org.bukkit.Material
 import org.bukkit.block.Block
 import org.bukkit.block.Chest
 import org.bukkit.block.DoubleChest
@@ -224,7 +225,30 @@ class ChestService(private val shop: Shop) {
         val id = value.id
         shop.db.run("상자 상점 지우기") { shop.db.deleteChestShop(shop.db.local, id) }
         shop.displays.remove(value)
+        // 상점 블록 아이템으로만 만들 수 있는 서버면 그 아이템을 돌려준다(알려진 한계였다, 2026-10-08). 블록은 그 아이템이었으니 거둔다 —
+        // 안 거두면 아이템과 상자 블록이 둘 다 남는다.
+        if (settings.creationItems && !value.admin) {
+            val block = value.key.block()
+            val material = block?.type?.takeIf { it.isBlock && !it.isAir } ?: Material.CHEST
+            if (block != null) {
+                // 창고는 DB 라 상자 자체는 비어 있어야 하지만, 혹시 든 것이 있으면 버리지 않고 바닥에.
+                (block.state as? Chest)?.blockInventory?.contents?.filterNotNull()?.forEach { block.world.dropItemNaturally(block.location, it) }
+                block.type = Material.AIR
+            }
+            val item = creationItem(material, 1)
+            val online = Bukkit.getPlayer(operator)
+            if (online != null) shop.returns.giveOrStore(online, item, 1, "상자 상점 삭제") else shop.returns.storeSplit(operator, item, 1, "상자 상점 삭제")
+        }
         by?.let { shop.messages.send(it, "chest-removed") }
+    }
+
+    /** 놓으면 상자 상점이 되는 아이템(`creation-items` 가 켜진 서버에서 쓴다). `/상점 … 아이템지급` 과 삭제 때 돌려주기가 같은 것을 만든다. */
+    fun creationItem(material: Material, amount: Int): ItemStack = ItemStack(material, amount).also { stack ->
+        stack.editMeta { meta ->
+            meta.displayName(kr.inmc.core.util.Text.renderFlat("<gold>상점 블록</gold>"))
+            meta.lore(kr.inmc.core.util.Text.renderLore(listOf("<gray>놓으면 상자 상점이 됩니다.</gray>")))
+            meta.persistentDataContainer.set(org.bukkit.NamespacedKey(com.inmc.shop.listener.ChestListener.TAG_NAMESPACE, "creation"), org.bukkit.persistence.PersistentDataType.BYTE, 1)
+        }
     }
 
     /** 창고의 물건을 전부 [to] 에게 — 접속 중이면 가방(넘치면 보관), 아니면 보관. */
@@ -447,7 +471,9 @@ class ChestService(private val shop: Shop) {
                 !q.isNullOrEmpty() -> {
                     val t = template(product) ?: return@filter false
                     val name = t.itemMeta?.displayName()?.let { kr.inmc.core.util.Text.plain(it) }.orEmpty().lowercase().replace(" ", "")
-                    name.contains(q) || t.type.name.lowercase().replace("_", "").contains(q)
+                    name.contains(q) || t.type.name.lowercase().replace("_", "").contains(q) ||
+                        // 바닐라 한글 이름(core VanillaNames, 2026-10-08) — 디스코드가 받아 둔 번역이 있을 때.
+                        (kr.inmc.core.util.VanillaNames.of(t.type)?.replace(" ", "")?.contains(q) == true)
                 }
                 else -> false
             }

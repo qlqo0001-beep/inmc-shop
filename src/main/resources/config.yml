@@ -52,6 +52,58 @@ virtual:
     hand: true
     hand-all: true
     containers: true
+  # 가격을 정하지 않은 상품(고정가인데 사고팔기 둘 다 -1)의 기본가 — 2026-10-08. 한쪽이라도 정했으면 손대지 않습니다.
+  # 재질 이름(minecraft: 뒤)의 glob 규칙을 위에서부터 보고, 맞는 것이 없으면 buy/sell. -1 = 그 방향 없음.
+  # 구매 기본가는 꺼 둡니다 — 싼 블록을 사서 비싼 재료로 되파는 길이 되기 쉽습니다. 판매 기본가만 낮게.
+  fallback-price:
+    enabled: true
+    buy: -1
+    sell: 10
+    rules:
+    - { pattern: netherite_block, buy: -1, sell: 20000 }
+    - { pattern: ancient_debris, buy: -1, sell: 1500 }
+    - { pattern: diamond_block, buy: -1, sell: 2000 }
+    - { pattern: emerald_block, buy: -1, sell: 2000 }
+    - { pattern: gold_block, buy: -1, sell: 800 }
+    - { pattern: iron_block, buy: -1, sell: 500 }
+    - { pattern: lapis_block, buy: -1, sell: 300 }
+    - { pattern: redstone_block, buy: -1, sell: 200 }
+    - { pattern: '*copper_block', buy: -1, sell: 200 }
+    - { pattern: coal_block, buy: -1, sell: 100 }
+    - { pattern: '*diamond_ore', buy: -1, sell: 220 }
+    - { pattern: '*emerald_ore', buy: -1, sell: 220 }
+    - { pattern: '*gold_ore', buy: -1, sell: 80 }
+    - { pattern: '*iron_ore', buy: -1, sell: 50 }
+    - { pattern: '*copper_ore', buy: -1, sell: 25 }
+    - { pattern: '*lapis_ore', buy: -1, sell: 40 }
+    - { pattern: '*redstone_ore', buy: -1, sell: 30 }
+    - { pattern: '*coal_ore', buy: -1, sell: 12 }
+    - { pattern: nether_quartz_ore, buy: -1, sell: 20 }
+    - { pattern: obsidian, buy: -1, sell: 40 }
+    - { pattern: crying_obsidian, buy: -1, sell: 60 }
+    - { pattern: '*_log', buy: -1, sell: 8 }
+    - { pattern: '*_wood', buy: -1, sell: 8 }
+    - { pattern: '*_stem', buy: -1, sell: 8 }
+    - { pattern: '*_hyphae', buy: -1, sell: 8 }
+    - { pattern: '*_planks', buy: -1, sell: 3 }
+    - { pattern: '*_leaves', buy: -1, sell: 1 }
+    - { pattern: '*_sapling', buy: -1, sell: 5 }
+    - { pattern: '*_wool', buy: -1, sell: 10 }
+    - { pattern: '*_glass*', buy: -1, sell: 5 }
+    - { pattern: '*_stairs', buy: -1, sell: 3 }
+    - { pattern: '*_slab', buy: -1, sell: 2 }
+    - { pattern: '*_fence*', buy: -1, sell: 3 }
+    - { pattern: '*_wall', buy: -1, sell: 2 }
+    - { pattern: dirt, buy: -1, sell: 1 }
+    - { pattern: '*dirt*', buy: -1, sell: 1 }
+    - { pattern: grass_block, buy: -1, sell: 2 }
+    - { pattern: sand, buy: -1, sell: 2 }
+    - { pattern: red_sand, buy: -1, sell: 2 }
+    - { pattern: gravel, buy: -1, sell: 2 }
+    - { pattern: cobblestone, buy: -1, sell: 1 }
+    - { pattern: '*cobble*', buy: -1, sell: 1 }
+    - { pattern: stone, buy: -1, sell: 2 }
+    - { pattern: deepslate, buy: -1, sell: 2 }
   # 판매 배수. RANK = LuckPerms 그룹(group.<이름>), PERMISSION = 접두사+이름 권한. 여러 개가 맞으면 가장 큰 값.
   sell-multiplier:
     mode: RANK

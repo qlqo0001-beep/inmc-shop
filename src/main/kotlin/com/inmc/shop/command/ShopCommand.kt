@@ -12,7 +12,6 @@ import com.inmc.shop.gui.OwnerBrowseMenu
 import com.inmc.shop.gui.SellMenu
 import com.inmc.shop.gui.ShopMenu
 import com.inmc.shop.gui.WarningsMenu
-import com.inmc.shop.listener.ChestListener
 import com.inmc.shop.util.Ph
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
@@ -24,11 +23,9 @@ import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import org.bukkit.Bukkit
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import org.bukkit.persistence.PersistentDataType
 
 /**
  * 명령어 — **한글 뿌리**(`/상점` · `/판매` · `/전부판매` · `/손판매` · `/같은것판매` · `/상자상점` · `/경매장`)와 **영어는 `/inmcshop` 하나의 뿌리 아래**
@@ -205,12 +202,7 @@ class ShopCommand(private val shop: Shop, private val plugin: ShopPlugin) {
     private fun giveItem(ctx: CommandContext<CommandSourceStack>, amount: Int) {
         val target = other(ctx) ?: return
         val material = Material.matchMaterial(StringArgumentType.getString(ctx, "블록")) ?: return shop.messages.send(sender(ctx), "chest-not-container")
-        val stack = ItemStack(material, amount)
-        stack.editMeta { meta ->
-            meta.displayName(kr.inmc.core.util.Text.renderFlat("<gold>상점 블록</gold>"))
-            meta.lore(kr.inmc.core.util.Text.renderLore(listOf("<gray>놓으면 상자 상점이 됩니다.</gray>")))
-            meta.persistentDataContainer.set(NamespacedKey(ChestListener.TAG_NAMESPACE, "creation"), PersistentDataType.BYTE, 1)
-        }
+        val stack = shop.chests.creationItem(material, amount)
         target.inventory.addItem(stack).values.forEach { target.world.dropItemNaturally(target.location, it) }
         shop.messages.send(sender(ctx), "given", Ph.of().player(target.name).amount(amount.toLong()))
     }

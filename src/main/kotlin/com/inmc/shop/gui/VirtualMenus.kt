@@ -79,6 +79,7 @@ object Products {
             val price = shop.prices.price(product, TradeType.BUY)!!
             lore += "<green>┃ 구매</green>"
             lore += "<dark_gray> » </dark_gray><gray>가격: <white>${money(price)}</white>" + trend(shop, product, TradeType.BUY) + "</gray>"
+            if (shop.prices.isFallback(product, TradeType.BUY)) lore += "<dark_gray> » 기본가 — 관리 화면에서 정하면 그 값</dark_gray>"
         }
         if (state != ProductState.BUYABLE) {
             val price = shop.prices.price(product, TradeType.SELL)!!
@@ -86,6 +87,7 @@ object Products {
             lore += "<red>┃ 판매</red>"
             lore += "<dark_gray> » </dark_gray><gray>받음: <white>${money(Math.floor(price * multiplier).toLong())}</white>" + trend(shop, product, TradeType.SELL) + "</gray>" +
                 if (multiplier != 1.0) " <gold>(x${"%.2f".format(multiplier).trimEnd('0').trimEnd('.')})</gold>" else ""
+            if (shop.prices.isFallback(product, TradeType.SELL)) lore += "<dark_gray> » 기본가 — 관리 화면에서 정하면 그 값</dark_gray>"
             if (product.type == ProductType.ITEM) {
                 val have = Inv.count(player) { shop.trades.matches(product, it) } / product.unit
                 if (have > 0) lore += "<dark_gray> » </dark_gray><gray>전부 팔면: <white>${money(Math.floor(price * have * multiplier).toLong())}</white> <dark_gray>(${have * product.unit}개)</dark_gray></gray>"
