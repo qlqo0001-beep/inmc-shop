@@ -24,6 +24,7 @@ import kr.inmc.core.economy.Currencies
 import kr.inmc.core.gui.ConfirmMenu
 import kr.inmc.core.gui.DialogForm
 import kr.inmc.core.gui.Icon
+import kr.inmc.core.gui.ItemInputMenu
 import kr.inmc.core.gui.Paging
 import kr.inmc.core.item.StorageMode
 import kr.inmc.core.item.StoredItem
@@ -86,10 +87,11 @@ class ShopEditMenu(shop: Shop, viewer: Player, private val id: String) : Menu(sh
                 mutate { it.copy(name = v.text("name").ifBlank { it.name }, description = v.text("desc").split('|').map(String::trim).filter { l -> l.isNotEmpty() }) }
             }
         }
-        set(11, Icon.relabel(MainMenu.shopIcon(shop, s, true), "<yellow>아이콘</yellow>", listOf("<gray>손에 든 것으로 바꿉니다(커스텀 모델 그대로).</gray>", "<gray>우클릭: 기본(상자)</gray>"))) { event ->
+        set(11, Icon.relabel(MainMenu.shopIcon(shop, s, true), "<yellow>아이콘</yellow>", listOf("<gray>좌클릭: 아이템을 올려 바꿉니다(커스텀 모델 그대로).</gray>", "<gray>우클릭: 기본(상자)</gray>"))) { event ->
             if (event.isRightClick) return@set mutate { it.copy(icon = null) }.also { refresh() }
-            val hand = viewer.inventory.itemInMainHand.takeIf { !it.type.isAir } ?: return@set shop.messages.send(viewer, "hand-empty")
-            mutate { it.copy(icon = shop.resolver.capture(hand), iconMaterial = hand.type) }; refresh()
+            ItemInputMenu(shop, viewer, "상점 아이콘", listOf("<gray>상점 아이콘으로 쓸 아이템(커스텀 모델 그대로).</gray>"), back = { show() }) { item ->
+                mutate { it.copy(icon = shop.resolver.capture(item), iconMaterial = item.type) }; show()
+            }.show()
         }
         set(12, toggleIcon("권한 필요", s.permissionRequired, "<gray>켜면 ${s.permission} 이 있어야 연다.</gray>")) { mutate { it.copy(permissionRequired = !it.permissionRequired) }; refresh() }
         set(13, toggleIcon("구매 허용", s.buying)) { mutate { it.copy(buying = !it.buying) }; refresh() }
@@ -279,10 +281,11 @@ class ProductEditMenu(shop: Shop, viewer: Player, private val shopId: String, pr
         set(10, valueIcon(Material.COMPARATOR, "종류", p.type.label, "<gray>아이템: 아이템을 준다(되팔 수 있다) · 명령어: 명령어를 돌린다(구매만)</gray>")) {
             mutate { it.copy(type = if (it.type == ProductType.ITEM) ProductType.COMMAND else ProductType.ITEM) }; refresh()
         }
-        set(11, Icon.of(Material.ITEM_FRAME, "<yellow>아이템 바꾸기</yellow>", "<gray>손에 든 것으로(개수 = 한 단위).</gray>", "<gray>명령어 상품이면 아이콘.</gray>")) {
-            val hand = viewer.inventory.itemInMainHand.takeIf { !it.type.isAir } ?: return@set shop.messages.send(viewer, "hand-empty")
-            val captured = shop.resolver.capture(hand.clone().apply { amount = 1 })
-            mutate { if (it.type == ProductType.ITEM) it.copy(item = ItemStorage.keepMode(it.item, captured), unit = hand.amount) else it.copy(preview = ItemStorage.keepMode(it.preview, captured)) }; refresh()
+        set(11, Icon.of(Material.ITEM_FRAME, "<yellow>아이템 바꾸기</yellow>", "<gray>올린 아이템으로(개수 = 한 단위).</gray>", "<gray>명령어 상품이면 아이콘.</gray>")) {
+            ItemInputMenu(shop, viewer, "상품 아이템", listOf("<gray>이 상품의 아이템(개수 = 한 단위).</gray>", "<gray>명령어 상품이면 아이콘.</gray>"), back = { show() }) { item ->
+                val captured = shop.resolver.capture(item.clone().apply { amount = 1 })
+                mutate { if (it.type == ProductType.ITEM) it.copy(item = ItemStorage.keepMode(it.item, captured), unit = item.amount) else it.copy(preview = ItemStorage.keepMode(it.preview, captured)) }; show()
+            }.show()
         }
         set(12, valueIcon(Material.PAPER, "한 단위", "${p.unit}개")) {
             ask(DialogForm("<yellow>한 단위</yellow>").long("unit", "개수", p.unit.toLong(), 1, 99L * 36)) { v -> mutate { it.copy(unit = (v.long("unit") ?: 1).toInt()) } }

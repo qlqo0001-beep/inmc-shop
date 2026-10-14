@@ -19,6 +19,7 @@ import kr.inmc.core.economy.Currencies
 import kr.inmc.core.gui.ConfirmMenu
 import kr.inmc.core.gui.DialogForm
 import kr.inmc.core.gui.Icon
+import kr.inmc.core.gui.ItemInputMenu
 import kr.inmc.core.util.Text
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -338,12 +339,13 @@ class CategoryMenu(shop: Shop, viewer: Player) : Menu(shop, viewer, 54, "<dark_r
                 edit(c)
             }
         }
-        set(49, Icon.of(Material.LIME_DYE, "<green>새 분류</green>", "<gray>손에 든 것이 아이콘</gray>")) {
+        set(49, Icon.of(Material.LIME_DYE, "<green>새 분류</green>", "<gray>id 를 정한 뒤 올린 아이템이 아이콘(기본 상자)</gray>")) {
             ask(DialogForm("<green>새 분류</green>").text("id", "id(영문)", "")) { v ->
                 val id = v.text("id").trim().lowercase()
                 if (id.isEmpty() || shop.categories.all.any { it.id == id }) return@ask shop.messages.send(viewer, "bad-id", Ph.of().value(id))
-                val icon = viewer.inventory.itemInMainHand.type.takeIf { !it.isAir } ?: Material.CHEST
-                edit(AuctionCategory(id, id, icon, emptyList(), shop.categories.all.size + 1))
+                ItemInputMenu(shop, viewer, "분류 아이콘 — $id", listOf("<gray>이 분류의 아이콘(재질만 씁니다).</gray>"), initial = org.bukkit.inventory.ItemStack(Material.CHEST), back = { show() }) { item ->
+                    edit(AuctionCategory(id, id, item.type, emptyList(), shop.categories.all.size + 1))
+                }.show()
             }
         }
         fillEmpty(Icon.FILLER)
