@@ -131,7 +131,7 @@ class VirtualTrades(private val shop: Shop) {
     }
 
     private fun deliver(player: Player, product: Product, quote: Quote) {
-        if (quote.template != null) Inv.give(player, quote.template, (quote.units * product.unit).toInt(), drop = true)
+        if (quote.template != null) shop.returns.giveOrMail(player, quote.template, (quote.units * product.unit).toInt(), "상점 구매")
         if (product.commands.isNotEmpty()) {
             repeat(quote.units.toInt().coerceIn(1, 10_000)) {
                 for (line in product.commands) {

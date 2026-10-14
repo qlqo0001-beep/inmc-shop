@@ -347,7 +347,7 @@ class ChestService(private val shop: Shop) {
                 shop.messages.send(player, "not-enough-money", Ph.of().price(currency.format(total))); return then(false)
             }
             if (!value.admin) setStock(value, product, stock(value, product) - items)
-            Inv.give(player, template, items.toInt(), drop = true)
+            shop.returns.giveOrMail(player, template, items.toInt(), "상자 상점 구매")
             if (!value.admin) pay(value.operator(), currency, total)
             val label = label(product)
             shop.log.record("chest", "buy", player.uniqueId, player.name, subject(product), label, items, currency.format(total), value.id + "@" + value.key.world + "," + value.key.x + "," + value.key.y + "," + value.key.z)

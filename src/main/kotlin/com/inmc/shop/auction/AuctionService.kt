@@ -7,6 +7,7 @@ import com.inmc.shop.util.Inv
 import com.inmc.shop.util.Labels
 import com.inmc.shop.util.Ph
 import kr.inmc.core.economy.Currency
+import kr.inmc.core.integration.Vanish
 import kr.inmc.core.util.Durations
 import kr.inmc.core.util.Text
 import org.bukkit.Bukkit
@@ -154,7 +155,8 @@ class AuctionService(private val shop: Shop) {
                             shop.messages.send(player, "auction-listed", Ph.of().item(label).amount(stack.amount.toLong()).price(currency.format(price)).value(if (tax > 0) currency.format(tax) else "없음"))
                             if (settings.announce) {
                                 val ph = Ph.of().player(player.name).item(label).amount(stack.amount.toLong()).price(currency.format(price))
-                                for (other in Bukkit.getOnlinePlayers()) if (other != player) shop.messages.send(other, "auction-announce", ph)
+                                // 투명한 사람이 올린 것은 그 사람을 볼 수 있는 사람에게만 알린다 — 공지가 정체를 드러내지 않게.
+                                for (other in Bukkit.getOnlinePlayers()) if (other != player && Vanish.canSee(other, player)) shop.messages.send(other, "auction-announce", ph)
                             }
                             then(true)
                         }
@@ -200,7 +202,7 @@ class AuctionService(private val shop: Shop) {
                         if (player.isOnline) shop.messages.send(player, "not-enough-money", Ph.of().price(currency.format(row.price)))
                         return@main then(false)
                     }
-                    Inv.give(player, stack, stack.amount, drop = true)
+                    shop.returns.giveOrMail(player, stack, stack.amount, "경매 구매")
                     val label = Labels.of(stack)
                     shop.log.record("auction", "auction-buy", player.uniqueId, player.name, shop.resolver.identify(stack).serialize(), label, stack.amount.toLong(), currency.format(row.price), id)
                     shop.messages.send(player, "auction-bought", Ph.of().item(label).amount(stack.amount.toLong()).price(currency.format(row.price)).player(row.sellerName))
@@ -266,7 +268,7 @@ class AuctionService(private val shop: Shop) {
             shop.main {
                 fresh?.let { listings[it.id] = it }
                 if (!ok) return@main then(false)
-                Inv.give(player, stack, stack.amount, drop = true)
+                shop.returns.giveOrMail(player, stack, stack.amount, "경매 돌려받기")
                 shop.messages.send(player, "auction-returned", Ph.of().item(Labels.of(stack)).amount(stack.amount.toLong()))
                 then(true)
             }

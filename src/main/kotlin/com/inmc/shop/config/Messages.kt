@@ -111,6 +111,7 @@ class Messages(values: Map<String, String>) : MessageCatalog<Ph>(values, DEFAULT
             "rent-active" to "<red>빌려준 동안에는 지울 수 없습니다. 먼저 임대를 끝내세요.</red>",
             "rent-price-too-high" to "<red>임대료는 최대 {가격} 입니다.</red>",
             "returns-stored" to "<yellow>가방이 차서 {수량}개는 보관했습니다. /상자상점 돌려받기 로 받으세요.</yellow>",
+            "returns-mailed" to "<yellow>가방이 차서 {수량}개는 우편으로 보냈습니다. /우편 에서 받으세요.</yellow>",
             "returns-claimed" to "<green>돌려받을 물건 {개수}묶음을 받았습니다.</green> <gray>(남음 {값})</gray>",
             "returns-none" to "<gray>돌려받을 물건이 없습니다.</gray>",
             "returns-join" to "<yellow>돌려받을 물건이 {개수}묶음 있습니다. /상자상점 돌려받기</yellow>",

@@ -66,6 +66,8 @@ class ShopPlugin : JavaPlugin() {
         papi = PapiHook(shop).takeIf { it.setup() }
         ShopCommand(shop, this).register(this)
         registerSignals()
+        // 만들기 전용 공급처 `inmcshop:creation:<블록>` — 상점 블록 아이템을 /지급·킷·보상이 같은 참조로 만든다(2026-10-10).
+        kr.inmc.core.integration.CustomItemHook.register(com.inmc.shop.hook.CreationItemProvider(shop))
 
         shop.displays.spawnAll()
         ticker = Ticker(shop)
@@ -90,6 +92,7 @@ class ShopPlugin : JavaPlugin() {
         if (::ticker.isInitialized) ticker.stop()
         papi?.teardown()
         SignalCatalog.unregisterAll(TradeLog.SOURCE)
+        kr.inmc.core.integration.CustomItemHook.unregister(com.inmc.shop.hook.CreationItemProvider.NAMESPACE)
         closeMenus()
         shop.displays.shutdown()
         runCatching { shop.shops.flushBlocking() }

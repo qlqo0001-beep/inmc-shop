@@ -21,6 +21,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
+import kr.inmc.core.integration.Vanish
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.command.CommandSender
@@ -79,8 +80,9 @@ class ShopCommand(private val shop: Shop, private val plugin: ShopPlugin) {
     private val shopIds = SuggestionProvider<CommandSourceStack> { _, b ->
         shop.shops.all().map { it.id }.filter { it.startsWith(b.remaining, ignoreCase = true) }.forEach(b::suggest); b.buildFuture()
     }
-    private val players = SuggestionProvider<CommandSourceStack> { _, b ->
-        Bukkit.getOnlinePlayers().map { it.name }.filter { it.startsWith(b.remaining, ignoreCase = true) }.forEach(b::suggest); b.buildFuture()
+    // 투명한 사람의 이름은 그 사람을 볼 수 있는 사람에게만 제안한다(core Vanish).
+    private val players = SuggestionProvider<CommandSourceStack> { ctx, b ->
+        Vanish.visibleNames(ctx.source.sender).filter { it.startsWith(b.remaining, ignoreCase = true) }.forEach(b::suggest); b.buildFuture()
     }
 
     private fun sender(ctx: CommandContext<CommandSourceStack>): CommandSender = ctx.source.sender
@@ -203,7 +205,7 @@ class ShopCommand(private val shop: Shop, private val plugin: ShopPlugin) {
         val target = other(ctx) ?: return
         val material = Material.matchMaterial(StringArgumentType.getString(ctx, "블록")) ?: return shop.messages.send(sender(ctx), "chest-not-container")
         val stack = shop.chests.creationItem(material, amount)
-        target.inventory.addItem(stack).values.forEach { target.world.dropItemNaturally(target.location, it) }
+        shop.returns.giveOrMail(target, stack, stack.amount, "상자 상점 아이템")
         shop.messages.send(sender(ctx), "given", Ph.of().player(target.name).amount(amount.toLong()))
     }
 
