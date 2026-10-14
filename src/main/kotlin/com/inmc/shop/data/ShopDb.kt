@@ -38,6 +38,8 @@ data class ListingRow(
     val payout: Long,
     val note: String?,
     val updated: Long,
+    /** 올린 모드의 칸(core `Realms` — 2026-10-15, 기능 `shop.auction`). 같은 칸에서만 보이고 사고 받는다. 모드가 없던 때의 것은 `""`. */
+    val realm: String = "",
 )
 
 /**
@@ -79,6 +81,8 @@ class ShopDb(logger: Logger) : SqlWorker(logger, "inmcshop-db") {
                     "search ${if (sqlite) "TEXT" else "VARCHAR(255)"} NOT NULL, group_key $text NOT NULL, currency $text NOT NULL, price $big NOT NULL, created $big NOT NULL, " +
                     "expires $big NOT NULL, state $text NOT NULL, buyer $text, buyer_name $text, sold_at $big NOT NULL, payout $big NOT NULL, note ${if (sqlite) "TEXT" else "VARCHAR(255)"}, updated $big NOT NULL)",
             )
+            // 2026-10-15 모드 — 올린 칸(이미 만든 표에는 열을 덧붙인다 — 있으면 실패를 무시).
+            runCatching { st.execute("ALTER TABLE auction_listing ADD COLUMN realm $text NOT NULL DEFAULT ''") }
             st.execute("CREATE TABLE IF NOT EXISTS auction_warning ($autoId, player $text NOT NULL, by_name $text NOT NULL, reason ${if (sqlite) "TEXT" else "VARCHAR(255)"} NOT NULL, at $big NOT NULL)")
             st.execute("CREATE TABLE IF NOT EXISTS auction_ban (player $text PRIMARY KEY, until $big NOT NULL, reason ${if (sqlite) "TEXT" else "VARCHAR(255)"} NOT NULL)")
             if (sqlite) {
@@ -376,22 +380,23 @@ class ShopDb(logger: Logger) : SqlWorker(logger, "inmcshop-db") {
 
     // --- 경매 ------------------------------------------------------------------------------
 
-    private val listingColumns = "id, seller, seller_name, item, amount, search, group_key, currency, price, created, expires, state, buyer, buyer_name, sold_at, payout, note, updated"
+    private val listingColumns = "id, seller, seller_name, item, amount, search, group_key, currency, price, created, expires, state, buyer, buyer_name, sold_at, payout, note, updated, realm"
 
     private fun listing(rs: ResultSet): ListingRow = ListingRow(
         id = rs.getString(1), seller = UUID.fromString(rs.getString(2)), sellerName = rs.getString(3), item = rs.getString(4),
         amount = rs.getInt(5), search = rs.getString(6), groupKey = rs.getString(7), currency = rs.getString(8), price = rs.getLong(9),
         created = rs.getLong(10), expires = rs.getLong(11), state = rs.getString(12), buyer = rs.getString(13)?.let(UUID::fromString),
         buyerName = rs.getString(14), soldAt = rs.getLong(15), payout = rs.getLong(16), note = rs.getString(17), updated = rs.getLong(18),
+        realm = rs.getString(19).orEmpty(),
     )
 
     fun insertListing(source: SqlSource, row: ListingRow) {
-        source.connection().prepareStatement("INSERT INTO auction_listing ($listingColumns) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").use { ps ->
+        source.connection().prepareStatement("INSERT INTO auction_listing ($listingColumns) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").use { ps ->
             ps.setString(1, row.id); ps.setString(2, row.seller.toString()); ps.setString(3, row.sellerName); ps.setString(4, row.item)
             ps.setInt(5, row.amount); ps.setString(6, row.search.take(250)); ps.setString(7, row.groupKey); ps.setString(8, row.currency)
             ps.setLong(9, row.price); ps.setLong(10, row.created); ps.setLong(11, row.expires); ps.setString(12, row.state)
             ps.setString(13, row.buyer?.toString()); ps.setString(14, row.buyerName); ps.setLong(15, row.soldAt); ps.setLong(16, row.payout)
-            ps.setString(17, row.note); ps.setLong(18, row.updated)
+            ps.setString(17, row.note); ps.setLong(18, row.updated); ps.setString(19, row.realm)
             ps.executeUpdate()
         }
     }

@@ -82,7 +82,7 @@ class AuctionMenu(shop: Shop, viewer: Player) : Menu(shop, viewer, 54, "<dark_gr
         val now = System.currentTimeMillis()
         val category = view.category?.let { id -> shop.categories.all.firstOrNull { it.id == id } }
         val q = view.query?.trim()?.lowercase()?.takeIf { it.isNotEmpty() }
-        val rows = shop.auction.active(now).filter { row ->
+        val rows = shop.auction.activeFor(viewer.uniqueId, now).filter { row ->
             (view.currency == null || row.currency.equals(view.currency, true)) &&
                 (q == null || row.search.contains(q)) &&
                 (category == null || shop.auction.item(row)?.let { category.matches(it.type) } == true)

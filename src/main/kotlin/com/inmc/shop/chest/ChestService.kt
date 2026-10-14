@@ -133,7 +133,17 @@ class ChestService(private val shop: Shop) {
     fun currencyOf(product: ChestProduct): Currency? = shop.currency(product.currency, settings.currency)
 
     /** 주인이 가방에서 창고로 [amount] 개(0 = 가진 것 전부) 넣는다. 넣은 개수. */
+    /**
+     * 그 상점이 이 사람의 모드에 있는가(core `Realms` — 2026-10-15). 원격 관리(목록 → 넣기·회수)로 다른 모드의 창고와 가방 사이에 물건이
+     * 오가지 않게 — 관리자(`inmcworlds.bypass.travel`)는 넘는다. 월드가 내려가 있으면 막지 않는다(블록이 없으니 어차피 못 연다).
+     */
+    fun sameMode(player: Player, value: ChestShop): Boolean {
+        val block = value.key.block() ?: return true
+        return kr.inmc.core.integration.Realms.canTravel(player, block.location)
+    }
+
     fun deposit(player: Player, value: ChestShop, product: ChestProduct, amount: Int): Int {
+        if (!sameMode(player, value)) { shop.messages.send(player, "chest-other-mode"); return 0 }
         if (value.admin) return 0
         val have = Inv.count(player) { matches(product, it) }
         val room = (capacity(value) - stock(value, product)).coerceAtLeast(0)
@@ -154,6 +164,7 @@ class ChestService(private val shop: Shop) {
     /** 창고에서 가방으로 [amount] 개(0 = 전부). 안 들어가면 돌려받을 물건으로. */
     fun withdraw(player: Player, value: ChestShop, product: ChestProduct, amount: Int): Int {
         if (value.admin) return 0
+        if (!sameMode(player, value)) { shop.messages.send(player, "chest-other-mode"); return 0 }
         val have = stock(value, product)
         val n = minOf(if (amount <= 0) have else amount.toLong(), have).toInt()
         if (n <= 0) { shop.messages.send(player, "chest-empty"); return 0 }

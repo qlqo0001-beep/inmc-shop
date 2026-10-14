@@ -61,6 +61,11 @@ class ShopPlugin : JavaPlugin() {
         for (player in server.onlinePlayers) shop.limits.load(player.uniqueId)
 
         server.pluginManager.registerEvents(PlayerListener(shop), this)
+        // 모드(inmc-worlds)의 기능 토글에 경매장을 올린다(core Realms, 2026-10-15).
+        kr.inmc.core.integration.Realms.register(kr.inmc.core.integration.Realms.Feature(
+            com.inmc.shop.auction.AuctionService.FEATURE, "상점", "경매장", org.bukkit.Material.GOLD_INGOT,
+            listOf("올린 모드에서만 보이고 사고 받는다(판매 대금·만료 물건 포함)"),
+        ))
         server.pluginManager.registerEvents(ChestListener(shop), this)
         server.pluginManager.registerEvents(kr.inmc.core.listener.MenuListener(shop), this)
         papi = PapiHook(shop).takeIf { it.setup() }
@@ -88,6 +93,7 @@ class ShopPlugin : JavaPlugin() {
     }
 
     override fun onDisable() {
+        kr.inmc.core.integration.Realms.unregisterAll("상점")
         if (!::shop.isInitialized) return
         if (::ticker.isInitialized) ticker.stop()
         papi?.teardown()

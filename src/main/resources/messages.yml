@@ -114,6 +114,7 @@ auction-failed: '<red>올리지 못했습니다. 물건과 수수료를 돌려�
 auction-listed: '<green>{물건} <white>x{수량}</white> 을(를) <white>{가격}</white> 에 올렸습니다. (수수료 {값})</green>'
 auction-announce: '<gold>[경매]</gold> <white>{player}</white> 이(가) {물건} <white>x{수량}</white> 을(를) <white>{가격}</white> 에 올렸습니다.'
 auction-gone: '<yellow>이미 팔렸거나 내려간 물건입니다.</yellow>'
+chest-other-mode: '<red>이 상자 상점은 다른 모드에 있습니다 — 그 모드에서 관리하세요.</red>'
 auction-own: '<yellow>자기 물건은 살 수 없습니다.</yellow>'
 auction-bought: '<green>{player} 의 {물건} <white>x{수량}</white> 을(를) <white>{가격}</white> 에 샀습니다.</green>'
 auction-sold-notice: '<gold>[경매]</gold> <green>{player} 이(가) {물건} 을(를) 샀습니다. 받을 돈 <white>{가격}</white> — /경매장 미수령</green>'

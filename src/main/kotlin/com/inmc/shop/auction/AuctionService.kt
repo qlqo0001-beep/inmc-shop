@@ -47,9 +47,17 @@ class AuctionService(private val shop: Shop) {
 
     fun active(now: Long = System.currentTimeMillis()): List<ListingRow> = listings.values.filter { it.state == ACTIVE && it.expires > now }
 
+    /** [viewer] 의 칸(모드)에서 팔리는 것만 — 둘러보기 화면. */
+    fun activeFor(viewer: UUID, now: Long = System.currentTimeMillis()): List<ListingRow> = scopeOf(viewer).let { realm -> active(now).filter { it.realm == realm } }
+
+    /** 이 사람의 지금 경매 칸(core `Realms`, 2026-10-15 — 기능 `shop.auction`). 같이 쓰기·모드 없음이면 `""`. */
+    fun scopeOf(player: UUID): String = kr.inmc.core.integration.Realms.scope(FEATURE, player)
+
     fun get(id: String): ListingRow? = listings[id]
 
-    fun ofSeller(player: UUID, state: String): List<ListingRow> = listings.values.filter { it.seller == player && it.state == state }.sortedByDescending { it.updated }
+    fun ofSeller(player: UUID, state: String): List<ListingRow> = scopeOf(player).let { realm ->
+        listings.values.filter { it.seller == player && it.state == state && it.realm == realm }.sortedByDescending { it.updated }
+    }
 
     fun activeOf(player: UUID, now: Long = System.currentTimeMillis()): List<ListingRow> = ofSeller(player, ACTIVE).filter { it.expires > now }
 
@@ -60,7 +68,9 @@ class AuctionService(private val shop: Shop) {
     /** 팔린 것 전부(돈을 받았든 아니든) — 정리되기 전까지. */
     fun completedCount(): Int = listings.values.count { it.state == SOLD || it.state == CLAIMED }
 
-    fun history(player: UUID): List<ListingRow> = listings.values.filter { it.seller == player && (it.state == SOLD || it.state == CLAIMED) }.sortedByDescending { it.soldAt }
+    fun history(player: UUID): List<ListingRow> = scopeOf(player).let { realm ->
+        listings.values.filter { it.seller == player && it.realm == realm && (it.state == SOLD || it.state == CLAIMED) }.sortedByDescending { it.soldAt }
+    }
 
     fun item(row: ListingRow): ItemStack? = Inv.decode(row.item)
 
@@ -138,7 +148,7 @@ class AuctionService(private val shop: Shop) {
                         id = UUID.randomUUID().toString(), seller = player.uniqueId, sellerName = player.name, item = Inv.encode(stack),
                         amount = stack.amount, search = searchText(stack), groupKey = groupKey(stack), currency = currency.id, price = price,
                         created = now, expires = now + settings.expireHours * 3_600_000L, state = ACTIVE, buyer = null, buyerName = null,
-                        soldAt = 0, payout = 0, note = null, updated = now,
+                        soldAt = 0, payout = 0, note = null, updated = now, realm = scopeOf(player.uniqueId),
                     )
                     shop.db.run("경매 올리기") {
                         val ok = runCatching { shop.db.insertListing(shop.db.shared, row) }.isSuccess
@@ -174,6 +184,8 @@ class AuctionService(private val shop: Shop) {
         val row = listings[id]
         val now = System.currentTimeMillis()
         if (row == null || row.state != ACTIVE || row.expires <= now) { shop.messages.send(player, "auction-gone"); return then(false) }
+        // 다른 모드에서 올린 것은 사지 못한다 — 산 물건이 그 모드를 떠나 이쪽 가방으로 넘어오지 않게.
+        if (row.realm != scopeOf(player.uniqueId)) { shop.messages.send(player, "auction-gone"); return then(false) }
         if (row.seller == player.uniqueId) { shop.messages.send(player, "auction-own"); return then(false) }
         if (!settings.enabled) { shop.messages.send(player, "module-disabled"); return then(false) }
         if (!shop.guard(player)) return then(false)
@@ -223,7 +235,7 @@ class AuctionService(private val shop: Shop) {
     /** 팔린 돈 받기. */
     fun claim(player: Player, id: String, then: (Boolean) -> Unit) {
         val row = listings[id] ?: return then(false)
-        if (row.seller != player.uniqueId || row.state != SOLD) return then(false)
+        if (row.seller != player.uniqueId || row.state != SOLD || row.realm != scopeOf(player.uniqueId)) return then(false)
         val currency = currencyOf(row) ?: run { shop.messages.send(player, "currency-missing", Ph.of().currency(row.currency)); return then(false) }
         shop.db.run("경매 돈 받기") {
             val ok = shop.db.moveListing(shop.db.shared, id, SOLD, CLAIMED, System.currentTimeMillis())
@@ -257,7 +269,7 @@ class AuctionService(private val shop: Shop) {
     fun takeBack(player: Player, id: String, then: (Boolean) -> Unit) {
         val row = listings[id] ?: return then(false)
         val now = System.currentTimeMillis()
-        if (row.seller != player.uniqueId) return then(false)
+        if (row.seller != player.uniqueId || row.realm != scopeOf(player.uniqueId)) return then(false)
         val stack = item(row) ?: return then(false)
         if (Inv.space(player, stack) < stack.amount) { shop.messages.send(player, "inventory-full"); return then(false) }
         shop.db.run("경매 돌려받기") {
@@ -278,7 +290,7 @@ class AuctionService(private val shop: Shop) {
     /** 내 등록 내리기 — 만료함으로 옮기고 바로 돌려받는다. */
     fun cancel(player: Player, id: String, then: (Boolean) -> Unit) {
         val row = listings[id] ?: return then(false)
-        if (row.seller != player.uniqueId || row.state != ACTIVE) return then(false)
+        if (row.seller != player.uniqueId || row.state != ACTIVE || row.realm != scopeOf(player.uniqueId)) return then(false)
         shop.db.run("경매 내리기") {
             val ok = shop.db.moveListing(shop.db.shared, id, ACTIVE, EXPIRED, System.currentTimeMillis(), "스스로 내림")
             val fresh = shop.db.listing(shop.db.shared, id)
@@ -392,6 +404,9 @@ class AuctionService(private val shop: Shop) {
     }
 
     companion object {
+        /** core `Realms` 기능 열쇠 — 경매장을 모드마다 따로 둘지(올린 모드에서만 보이고 사고 받는다). */
+        const val FEATURE = "shop.auction"
+
         const val ACTIVE = "ACTIVE"
         const val SOLD = "SOLD"
         const val CLAIMED = "CLAIMED"

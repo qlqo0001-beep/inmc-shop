@@ -128,6 +128,7 @@ class Messages(values: Map<String, String>) : MessageCatalog<Ph>(values, DEFAULT
             "auction-listed" to "<green>{물건} <white>x{수량}</white> 을(를) <white>{가격}</white> 에 올렸습니다. (수수료 {값})</green>",
             "auction-announce" to "<gold>[경매]</gold> <white>{player}</white> 이(가) {물건} <white>x{수량}</white> 을(를) <white>{가격}</white> 에 올렸습니다.",
             "auction-gone" to "<yellow>이미 팔렸거나 내려간 물건입니다.</yellow>",
+            "chest-other-mode" to "<red>이 상자 상점은 다른 모드에 있습니다 — 그 모드에서 관리하세요.</red>",
             "auction-own" to "<yellow>자기 물건은 살 수 없습니다.</yellow>",
             "auction-bought" to "<green>{player} 의 {물건} <white>x{수량}</white> 을(를) <white>{가격}</white> 에 샀습니다.</green>",
             "auction-sold-notice" to "<gold>[경매]</gold> <green>{player} 이(가) {물건} 을(를) 샀습니다. 받을 돈 <white>{가격}</white> — /경매장 미수령</green>",
